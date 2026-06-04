@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JoyceStore — Inscription</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <style>
+    .strength-bar { height: 4px; border-radius: 99px; background: var(--border); margin-top: 6px; overflow: hidden; }
+    .strength-fill { height: 100%; border-radius: 99px; transition: width 0.3s, background 0.3s; width: 0%; }
+    .strength-label { font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; }
+    .pass-wrap { position:relative; }
+    .eye-btn { position:absolute; right:0.85rem; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-dim); }
+    .eye-btn svg { width:18px; height:18px; }
+    .terms { font-size: 0.8rem; color: var(--text-muted); display:flex; gap:0.5rem; align-items:flex-start; margin-top:0.5rem; }
+    .terms input[type=checkbox] { width:auto; margin-top:2px; accent-color:var(--teal); }
+  </style>
+</head>
+<body class="auth-page">
+  <div class="auth-bg"></div>
+  <div class="grid-lines"></div>
+
+  <div class="auth-wrap" style="max-width:500px">
+    <div class="auth-logo">
+      <div class="mark">J</div>
+      <h1>Joyce<span>Store</span></h1>
+      <p>Créer votre compte</p>
+    </div>
+
+    <div class="auth-card">
+      <h2>Rejoindre JoyceStore ✦</h2>
+      <p class="sub">Remplissez le formulaire pour créer votre accès</p>
+
+      <form id="regForm" onsubmit="handleRegister(event)" autocomplete="off">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Prénom *</label>
+            <input type="text" id="rPrenom" placeholder="Alice" required />
+          </div>
+          <div class="form-group">
+            <label>Nom *</label>
+            <input type="text" id="rNom" placeholder="Dupont" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Adresse e-mail *</label>
+          <input type="email" id="rEmail" placeholder="alice.dupont@JoyceStore.com" required />
+        </div>
+
+        <div class="form-group">
+          <label>Rôle *</label>
+          <select id="rRole">
+            <option value="vendeur">Vendeur</option>
+            <option value="gestionnaire">Gestionnaire</option>
+            <option value="admin">Administrateur</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Mot de passe *</label>
+          <div class="pass-wrap">
+            <input type="password" id="rPass" placeholder="Minimum 6 caractères" required oninput="checkStrength(this.value)" />
+            <button type="button" class="eye-btn" onclick="togglePass('rPass')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+          <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+          <div class="strength-label" id="strengthLabel"></div>
+        </div>
+
+        <div class="form-group">
+          <label>Confirmer le mot de passe *</label>
+          <div class="pass-wrap">
+            <input type="password" id="rPass2" placeholder="Répétez votre mot de passe" required />
+            <button type="button" class="eye-btn" onclick="togglePass('rPass2')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <label class="terms">
+          <input type="checkbox" id="rTerms" required />
+          <span>J'accepte les conditions d'utilisation de JoyceStore</span>
+        </label>
+
+        <div id="regError" class="msg-error hidden"></div>
+        <div id="regSuccess" class="msg-success hidden"></div>
+
+        <button type="submit" class="btn btn-primary full" id="regBtn" style="margin-top:1rem">
+          Créer le compte
+        </button>
+      </form>
+    </div>
+
+    <p class="auth-link">Déjà inscrit ? <a href="index.html">Se connecter</a></p>
+  </div>
+
+  <div id="toast"></div>
+  <script src="assets/js/data.js"></script>
+  <script>
+    if (DB.session()) window.location.href = 'dashboard.html';
+
+    function checkStrength(val) {
+      const fill  = $('#strengthFill');
+      const label = $('#strengthLabel');
+      let score = 0;
+      if (val.length >= 6)  score++;
+      if (val.length >= 10) score++;
+      if (/[A-Z]/.test(val)) score++;
+      if (/[0-9]/.test(val)) score++;
+      if (/[^A-Za-z0-9]/.test(val)) score++;
+      const levels = [
+        { pct:'20%', color:'var(--red)',  txt:'Très faible' },
+        { pct:'40%', color:'#F97316',     txt:'Faible' },
+        { pct:'60%', color:'var(--gold)', txt:'Moyen' },
+        { pct:'80%', color:'var(--blue)', txt:'Fort' },
+        { pct:'100%',color:'var(--teal)', txt:'Très fort' },
+      ];
+      const lv = levels[Math.max(0, score-1)] || levels[0];
+      fill.style.width = val ? lv.pct : '0%';
+      fill.style.background = val ? lv.color : '';
+      label.textContent = val ? lv.txt : '';
+      label.style.color = val ? lv.color : '';
+    }
+
+    function handleRegister(e) {
+      e.preventDefault();
+      const prenom = $('#rPrenom').value.trim();
+      const nom    = $('#rNom').value.trim();
+      const email  = $('#rEmail').value.trim();
+      const role   = $('#rRole').value;
+      const pass   = $('#rPass').value;
+      const pass2  = $('#rPass2').value;
+      const err    = $('#regError');
+      const ok     = $('#regSuccess');
+      const btn    = $('#regBtn');
+
+      err.classList.add('hidden');
+      ok.classList.add('hidden');
+
+      if (pass.length < 6) {
+        err.textContent = '❌ Le mot de passe doit contenir au moins 6 caractères.';
+        err.classList.remove('hidden'); return;
+      }
+      if (pass !== pass2) {
+        err.textContent = '❌ Les mots de passe ne correspondent pas.';
+        err.classList.remove('hidden'); return;
+      }
+      if (DB.getUserByEmail(email)) {
+        err.textContent = '❌ Cet email est déjà utilisé.';
+        err.classList.remove('hidden'); return;
+      }
+
+      btn.textContent = 'Création...'; btn.disabled = true;
+
+      setTimeout(() => {
+        DB.addUser({ nom, prenom, email, password: pass, role, statut: 'actif' });
+        ok.textContent = '✅ Compte créé avec succès ! Redirection vers la connexion…';
+        ok.classList.remove('hidden');
+        showToast('Compte créé avec succès !', 'success');
+        setTimeout(() => window.location.href = 'index.html', 1800);
+      }, 600);
+    }
+
+    function togglePass(id) {
+      const inp = document.getElementById(id);
+      inp.type = inp.type === 'text' ? 'password' : 'text';
+    }
+  </script>
+</body>
+</html>

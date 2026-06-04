@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JoyceStore — Dashboard</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <style>
+    .welcome-banner {
+      background: linear-gradient(135deg, #00D4AA11, #F5B40011);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.4rem 1.8rem;
+      margin-bottom: 1.5rem;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .welcome-banner h2 { font-size: 1.2rem; font-weight: 700; }
+    .welcome-banner p  { color: var(--text-muted); font-size: 0.88rem; margin-top: 0.2rem; }
+    .welcome-banner .date { font-size: 0.85rem; color: var(--text-muted); white-space:nowrap; }
+
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-top: 1.2rem; }
+    @media (max-width:800px) { .grid2 { grid-template-columns: 1fr; } }
+
+    .activity-list { list-style: none; }
+    .activity-list li {
+      display: flex; align-items: flex-start; gap: 0.75rem;
+      padding: 0.7rem 0;
+      border-bottom: 1px solid rgba(30,45,68,0.5);
+      font-size: 0.86rem;
+    }
+    .activity-list li:last-child { border-bottom: none; }
+    .act-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      margin-top: 5px; flex-shrink: 0;
+    }
+    .act-text { flex: 1; color: var(--text-muted); }
+    .act-text strong { color: var(--text); }
+    .act-time { color: var(--text-dim); font-size: 0.78rem; white-space:nowrap; }
+
+    .top-products { list-style: none; }
+    .top-products li {
+      display: flex; align-items: center; gap: 0.9rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid rgba(30,45,68,0.5);
+      font-size: 0.86rem;
+    }
+    .top-products li:last-child { border-bottom: none; }
+    .prod-emoji { font-size: 1.3rem; }
+    .prod-name { flex: 1; font-weight: 500; }
+    .prod-sales { color: var(--text-muted); }
+    .prod-revenue { color: var(--teal); font-weight: 600; font-size: 0.82rem; }
+
+    .chart-bar-wrap { margin-top: 0.8rem; }
+    .chart-bar-row { display:flex; align-items:center; gap:0.75rem; margin-bottom:0.7rem; font-size:0.82rem; }
+    .chart-bar-label { width:80px; color:var(--text-muted); text-align:right; flex-shrink:0; }
+    .chart-bar-track { flex:1; height:8px; background:var(--bg3); border-radius:99px; overflow:hidden; }
+    .chart-bar-fill  { height:100%; border-radius:99px; transition: width 1s cubic-bezier(0.4,0,0.2,1); }
+    .chart-bar-val   { width:70px; color:var(--text); font-weight:600; font-size:0.8rem; }
+  </style>
+</head>
+<body class="app">
+
+  <!-- Sidebar overlay for mobile -->
+  <div class="sidebar-overlay hidden" id="overlay" onclick="toggleSidebar()" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99;"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="mark">J</div>
+      <span>JoyceStore</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Menu</div>
+      <a href="dashboard.html" class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="users.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        Utilisateurs
+        <span class="nav-count" id="navUserCount">—</span>
+      </a>
+      <a href="products.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        Produits
+        <span class="nav-count" id="navProdCount">—</span>
+      </a>
+      <a href="sales.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Ventes
+        <span class="nav-count" id="navSaleCount">—</span>
+      </a>
+    </nav>
+    <div class="sidebar-user" id="sidebarUser"></div>
+  </aside>
+
+  <div class="page">
+    <header class="topbar">
+      <button class="burger" onclick="toggleSidebar();document.getElementById('overlay').classList.toggle('hidden')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-left">
+        <div class="topbar-title" id="topTitle">Dashboard</div>
+        <div class="topbar-sub" id="topDate"></div>
+      </div>
+      <div class="topbar-right">
+        <div id="topAvatar"></div>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- Welcome banner -->
+      <div class="welcome-banner">
+        <div>
+          <h2 id="welcomeMsg">Bonjour 👋</h2>
+          <p>Voici un aperçu de votre activité aujourd'hui</p>
+        </div>
+        <div class="date" id="fullDate"></div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid" id="statsGrid"></div>
+
+      <div class="grid2">
+        <!-- Top products -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">🏆 Top Produits</div>
+              <div class="card-sub">Par chiffre d'affaires</div>
+            </div>
+            <a href="products.html" class="btn btn-ghost" style="font-size:0.8rem;padding:0.4rem 0.8rem">Voir tout</a>
+          </div>
+          <ul class="top-products" id="topProducts"></ul>
+        </div>
+
+        <!-- Ventes par statut -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">📊 Ventes par statut</div>
+              <div class="card-sub">Répartition actuelle</div>
+            </div>
+          </div>
+          <div class="chart-bar-wrap" id="salesChart"></div>
+        </div>
+      </div>
+
+      <div class="grid2" style="margin-top:1.2rem">
+        <!-- Recent sales -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">💰 Dernières ventes</div>
+              <div class="card-sub">5 transactions récentes</div>
+            </div>
+            <a href="sales.html" class="btn btn-ghost" style="font-size:0.8rem;padding:0.4rem 0.8rem">Voir tout</a>
+          </div>
+          <div id="recentSales"></div>
+        </div>
+
+        <!-- Activity feed -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">⚡ Activité récente</div>
+          </div>
+          <ul class="activity-list" id="activityFeed"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <script src="assets/js/data.js"></script>
+  <script>
+    DB.requireAuth();
+    const s = DB.session();
+
+    // Topbar
+    document.getElementById('topDate').textContent = new Date().toLocaleDateString('fr-FR', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    document.getElementById('fullDate').textContent = new Date().toLocaleDateString('fr-FR', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    document.getElementById('welcomeMsg').textContent = `Bonjour, ${s.prenom} 👋`;
+    document.getElementById('topAvatar').innerHTML = mkAvatar(s.prenom+' '+s.nom, 38);
+    renderSidebarUser();
+
+    // Nav counts
+    const users    = DB.getUsers();
+    const products = DB.getProducts();
+    const sales    = DB.getSales();
+    document.getElementById('navUserCount').textContent = users.length;
+    document.getElementById('navProdCount').textContent = products.length;
+    document.getElementById('navSaleCount').textContent = sales.length;
+
+    // Stats
+    const totalCA   = sales.filter(s=>s.statut==='payé').reduce((a,b)=>a+b.total,0);
+    const stockTotal= products.reduce((a,b)=>a+b.stock,0);
+    const statsData = [
+      { label:'Chiffre d\'affaires', value: fmtMoney(totalCA), icon:'<path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>',                    diff:'+18% ce mois',  c:'var(--teal)' },
+      { label:'Ventes totales',      value: sales.length,       icon:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>',diff:'+5 cette semaine',c:'var(--gold)' },
+      { label:'Produits en stock',   value: stockTotal+' unités',icon:'<path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>',diff:products.filter(p=>p.stock<20).length+' en rupture',c:'var(--blue)' },
+      { label:'Utilisateurs actifs', value: users.filter(u=>u.statut==='actif').length, icon:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>',diff:`${users.length} inscrits total`,c:'#A855F7' },
+    ];
+    document.getElementById('statsGrid').innerHTML = statsData.map(d => `
+      <div class="stat-card" style="--c:${d.c}">
+        <div class="stat-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${d.icon}</svg></div>
+        <div>
+          <div class="stat-label">${d.label}</div>
+          <div class="stat-value">${d.value}</div>
+          <div class="stat-diff">${d.diff}</div>
+        </div>
+      </div>`).join('');
+
+    // Top products by CA
+    const prodSales = {};
+    sales.filter(s=>s.statut==='payé').forEach(s => {
+      prodSales[s.produitNom] = (prodSales[s.produitNom]||0) + s.total;
+    });
+    const topProds = Object.entries(prodSales).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const prodEmojis = Object.fromEntries(products.map(p=>[p.nom,p.image]));
+    document.getElementById('topProducts').innerHTML = topProds.map(([nom,ca],i) => `
+      <li>
+        <span class="prod-emoji">${prodEmojis[nom]||'📦'}</span>
+        <span class="prod-name">${nom}</span>
+        <span class="prod-sales">${sales.filter(s=>s.produitNom===nom).length} ventes</span>
+        <span class="prod-revenue">${fmtMoney(ca)}</span>
+      </li>`).join('');
+
+    // Sales chart by status
+    const statusCount = {payé:0,'en attente':0,annulé:0};
+    sales.forEach(s => { if(statusCount[s.statut]!==undefined) statusCount[s.statut]++; });
+    const total = sales.length || 1;
+    const chartColors = {payé:'var(--teal)','en attente':'var(--gold)',annulé:'var(--red)'};
+    document.getElementById('salesChart').innerHTML = Object.entries(statusCount).map(([k,v]) => `
+      <div class="chart-bar-row">
+        <div class="chart-bar-label">${k.charAt(0).toUpperCase()+k.slice(1)}</div>
+        <div class="chart-bar-track">
+          <div class="chart-bar-fill" style="width:${Math.round(v/total*100)}%;background:${chartColors[k]}"></div>
+        </div>
+        <div class="chart-bar-val">${v} <span style="color:var(--text-muted);font-weight:400">(${Math.round(v/total*100)}%)</span></div>
+      </div>`).join('');
+
+    // Recent sales mini table
+    const recent5 = [...sales].sort((a,b)=>b.id-a.id).slice(0,5);
+    document.getElementById('recentSales').innerHTML = `
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Produit</th><th>Vendeur</th><th>Total</th><th>Statut</th></tr></thead>
+          <tbody>${recent5.map(s=>`
+            <tr>
+              <td style="font-weight:500">${s.produitNom}</td>
+              <td style="color:var(--text-muted)">${s.vendeurNom}</td>
+              <td style="color:var(--teal);font-weight:600">${fmtMoney(s.total)}</td>
+              <td>${statusBadge(s.statut)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+
+    // Activity feed
+    const activities = [
+      ...sales.slice(-4).reverse().map(s => ({ color:'var(--teal)', text:`<strong>${s.vendeurNom}</strong> a enregistré une vente de ${fmtMoney(s.total)}`, time: fmtDate(s.date) })),
+      ...users.slice(-3).reverse().map(u => ({ color:'var(--gold)', text:`<strong>${u.prenom} ${u.nom}</strong> a rejoint JoyceStore (${u.role})`, time: fmtDate(u.created) })),
+    ].slice(0,6);
+    document.getElementById('activityFeed').innerHTML = activities.map(a => `
+      <li>
+        <span class="act-dot" style="background:${a.color}"></span>
+        <span class="act-text">${a.text}</span>
+        <span class="act-time">${a.time}</span>
+      </li>`).join('');
+  </script>
+</body>
+</html>

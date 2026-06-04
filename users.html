@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JoyceStore — Utilisateurs</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body class="app">
+
+  <div class="sidebar-overlay hidden" id="overlay" onclick="toggleSidebar();this.classList.add('hidden')" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99;"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo"><div class="mark">J</div><span>JoyceStore</span></div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Menu</div>
+      <a href="dashboard.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="users.html" class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        Utilisateurs
+      </a>
+      <a href="products.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        Produits
+      </a>
+      <a href="sales.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Ventes
+      </a>
+    </nav>
+    <div class="sidebar-user" id="sidebarUser"></div>
+  </aside>
+
+  <div class="page">
+    <header class="topbar">
+      <button class="burger" onclick="toggleSidebar();document.getElementById('overlay').classList.toggle('hidden')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-left">
+        <div class="topbar-title">Gestion des utilisateurs</div>
+        <div class="topbar-sub" id="userCountLabel"></div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-primary" onclick="openModal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Ajouter
+        </button>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- Live update banner -->
+      <div id="liveBanner" class="hidden" style="background:var(--teal-dim);border:1px solid var(--teal-glow);border-radius:var(--radius);padding:0.7rem 1.2rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.75rem;font-size:0.88rem;color:var(--teal)">
+        <span>🔄</span>
+        <span id="liveBannerText"></span>
+        <button onclick="this.parentElement.classList.add('hidden')" style="margin-left:auto;background:none;border:none;color:var(--teal);cursor:pointer;font-size:1rem">✕</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <!-- Toolbar -->
+          <div class="toolbar" style="flex:1">
+            <div class="search-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input class="search-input" type="text" id="searchInput" placeholder="Rechercher par nom, email…" oninput="applyFilters()" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter tabs -->
+        <div class="filter-tabs" style="margin-bottom:1rem">
+          <button class="ftab active" onclick="setFilter('all',this)">Tous <span id="countAll"></span></button>
+          <button class="ftab" onclick="setFilter('admin',this)">Admin</button>
+          <button class="ftab" onclick="setFilter('gestionnaire',this)">Gestionnaire</button>
+          <button class="ftab" onclick="setFilter('vendeur',this)">Vendeur</button>
+          <button class="ftab" onclick="setFilter('actif',this)">● Actif</button>
+          <button class="ftab" onclick="setFilter('inactif',this)">○ Inactif</button>
+        </div>
+
+        <div class="table-scroll">
+          <table id="usersTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Utilisateur</th>
+                <th>Email</th>
+                <th>Rôle</th>
+                <th>Statut</th>
+                <th>Inscrit le</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersBody"></tbody>
+          </table>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:1rem;flex-wrap:wrap;gap:0.5rem">
+          <div style="font-size:0.82rem;color:var(--text-muted)" id="pageInfo"></div>
+          <div class="pagination" id="pagination"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Modal -->
+  <div class="overlay hidden" id="userModal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="modalTitle">Ajouter un utilisateur</h3>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="mId" />
+        <div class="form-row">
+          <div class="form-group">
+            <label>Prénom *</label>
+            <input type="text" id="mPrenom" placeholder="Alice" />
+          </div>
+          <div class="form-group">
+            <label>Nom *</label>
+            <input type="text" id="mNom" placeholder="Dupont" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" id="mEmail" placeholder="alice@JoyceStore.com" />
+        </div>
+        <div class="form-group">
+          <label>Mot de passe <span id="passHint" style="color:var(--text-dim)">(laisser vide pour ne pas modifier)</span></label>
+          <input type="password" id="mPass" placeholder="••••••••" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Rôle *</label>
+            <select id="mRole">
+              <option value="vendeur">Vendeur</option>
+              <option value="gestionnaire">Gestionnaire</option>
+              <option value="admin">Administrateur</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Statut *</label>
+            <select id="mStatut">
+              <option value="actif">Actif</option>
+              <option value="inactif">Inactif</option>
+            </select>
+          </div>
+        </div>
+        <div id="modalErr" class="msg-error hidden"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+        <button class="btn btn-primary" onclick="saveUser()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete confirm modal -->
+  <div class="overlay hidden" id="delModal">
+    <div class="modal" style="max-width:380px">
+      <div class="modal-head">
+        <h3>Confirmer la suppression</h3>
+        <button class="modal-close" onclick="closeDelModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="color:var(--text-muted)">Voulez-vous vraiment supprimer <strong id="delName" style="color:var(--text)"></strong> ? Cette action est irréversible.</p>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" onclick="closeDelModal()">Annuler</button>
+        <button class="btn btn-danger" onclick="confirmDelete()">Supprimer</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <script src="assets/js/data.js"></script>
+  <script>
+    DB.requireAuth();
+    renderSidebarUser();
+
+    let allUsers = [];
+    let filtered = [];
+    let currentPage = 1;
+    const PER_PAGE = 8;
+    let activeFilter = 'all';
+    let deleteTarget = null;
+    let prevCount = 0;
+
+    function load() {
+      allUsers = DB.getUsers();
+      // Detect new registrations
+      if (prevCount > 0 && allUsers.length > prevCount) {
+        const diff = allUsers.length - prevCount;
+        const banner = document.getElementById('liveBanner');
+        document.getElementById('liveBannerText').textContent =
+          `🆕 ${diff} nouvel(le)(s) utilisateur(s) inscrit(s) — liste mise à jour automatiquement.`;
+        banner.classList.remove('hidden');
+        showToast(`Nouvelle inscription détectée !`, 'success');
+      }
+      prevCount = allUsers.length;
+      applyFilters();
+      document.getElementById('userCountLabel').textContent = `${allUsers.length} utilisateurs enregistrés`;
+      document.getElementById('countAll').textContent = allUsers.length;
+    }
+
+    function setFilter(f, btn) {
+      activeFilter = f;
+      $$('.ftab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentPage = 1;
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const q = ($('#searchInput')?.value||'').toLowerCase();
+      filtered = allUsers.filter(u => {
+        const matchSearch = !q ||
+          (u.prenom+' '+u.nom).toLowerCase().includes(q) ||
+          u.email.toLowerCase().includes(q) ||
+          u.role.toLowerCase().includes(q);
+        const matchFilter =
+          activeFilter === 'all' ? true :
+          ['admin','gestionnaire','vendeur'].includes(activeFilter) ? u.role === activeFilter :
+          u.statut === activeFilter;
+        return matchSearch && matchFilter;
+      });
+      renderTable();
+      renderPagination();
+    }
+
+    function renderTable() {
+      const start = (currentPage-1)*PER_PAGE;
+      const page  = filtered.slice(start, start+PER_PAGE);
+      const cur   = DB.session();
+
+      document.getElementById('pageInfo').textContent =
+        `Affichage ${start+1}–${Math.min(start+PER_PAGE, filtered.length)} sur ${filtered.length}`;
+
+      document.getElementById('usersBody').innerHTML = page.length ? page.map((u,i) => `
+        <tr id="row-${u.id}">
+          <td style="color:var(--text-dim);font-size:0.8rem">${start+i+1}</td>
+          <td>
+            <div class="cell-user">
+              ${mkAvatar(u.prenom+' '+u.nom)}
+              <div>
+                <div style="font-weight:600">${u.prenom} ${u.nom}</div>
+                ${u.id === cur.id ? '<div style="font-size:0.72rem;color:var(--teal)">● Vous</div>' : ''}
+              </div>
+            </div>
+          </td>
+          <td style="color:var(--text-muted)">${u.email}</td>
+          <td>${roleBadge(u.role)}</td>
+          <td>${statusBadge(u.statut)}</td>
+          <td style="color:var(--text-muted);font-size:0.82rem">${fmtDate(u.created)}</td>
+          <td>
+            <div style="display:flex;gap:5px">
+              <button class="btn btn-ghost btn-icon" onclick="openEdit(${u.id})" title="Modifier">✏️</button>
+              <button class="btn btn-danger btn-icon" onclick="openDelete(${u.id})" title="Supprimer" ${u.id===cur.id?'disabled style="opacity:0.3"':''}>🗑️</button>
+            </div>
+          </td>
+        </tr>`).join('')
+      : `<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted)">Aucun utilisateur trouvé</td></tr>`;
+    }
+
+    function renderPagination() {
+      const totalPages = Math.ceil(filtered.length / PER_PAGE);
+      const el = document.getElementById('pagination');
+      if (totalPages <= 1) { el.innerHTML = ''; return; }
+      let html = `<button class="pag-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+      for (let i=1; i<=totalPages; i++) {
+        html += `<button class="pag-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+      }
+      html += `<button class="pag-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>›</button>`;
+      el.innerHTML = html;
+    }
+
+    function goPage(p) {
+      const total = Math.ceil(filtered.length / PER_PAGE);
+      if (p < 1 || p > total) return;
+      currentPage = p;
+      renderTable();
+      renderPagination();
+    }
+
+    // Modal
+    function openModal() {
+      document.getElementById('modalTitle').textContent = 'Ajouter un utilisateur';
+      document.getElementById('mId').value = '';
+      document.getElementById('mPrenom').value = '';
+      document.getElementById('mNom').value = '';
+      document.getElementById('mEmail').value = '';
+      document.getElementById('mPass').value = '';
+      document.getElementById('mRole').value = 'vendeur';
+      document.getElementById('mStatut').value = 'actif';
+      document.getElementById('passHint').textContent = '';
+      document.getElementById('modalErr').classList.add('hidden');
+      document.getElementById('userModal').classList.remove('hidden');
+    }
+
+    function openEdit(id) {
+      const u = DB.getUsers().find(u=>u.id===id);
+      if (!u) return;
+      document.getElementById('modalTitle').textContent = 'Modifier l\'utilisateur';
+      document.getElementById('mId').value = u.id;
+      document.getElementById('mPrenom').value = u.prenom;
+      document.getElementById('mNom').value = u.nom;
+      document.getElementById('mEmail').value = u.email;
+      document.getElementById('mPass').value = '';
+      document.getElementById('mRole').value = u.role;
+      document.getElementById('mStatut').value = u.statut;
+      document.getElementById('passHint').textContent = '(laisser vide pour conserver)';
+      document.getElementById('modalErr').classList.add('hidden');
+      document.getElementById('userModal').classList.remove('hidden');
+    }
+
+    function closeModal() { document.getElementById('userModal').classList.add('hidden'); }
+
+    function saveUser() {
+      const id     = document.getElementById('mId').value;
+      const prenom = document.getElementById('mPrenom').value.trim();
+      const nom    = document.getElementById('mNom').value.trim();
+      const email  = document.getElementById('mEmail').value.trim();
+      const pass   = document.getElementById('mPass').value;
+      const role   = document.getElementById('mRole').value;
+      const statut = document.getElementById('mStatut').value;
+      const err    = document.getElementById('modalErr');
+
+      if (!prenom || !nom || !email) {
+        err.textContent = '❌ Veuillez remplir tous les champs obligatoires.';
+        err.classList.remove('hidden'); return;
+      }
+      const existing = DB.getUserByEmail(email);
+      if (existing && existing.id != id) {
+        err.textContent = '❌ Cet email est déjà utilisé.';
+        err.classList.remove('hidden'); return;
+      }
+
+      if (id) {
+        // Update
+        const data = { prenom, nom, email, role, statut };
+        if (pass) data.password = pass;
+        DB.updateUser(Number(id), data);
+        showToast('Utilisateur modifié avec succès', 'success');
+      } else {
+        // Create
+        if (!pass) { err.textContent = '❌ Un mot de passe est requis.'; err.classList.remove('hidden'); return; }
+        DB.addUser({ prenom, nom, email, password: pass, role, statut });
+        showToast('Utilisateur ajouté avec succès', 'success');
+      }
+      closeModal();
+      load();
+    }
+
+    // Delete
+    function openDelete(id) {
+      const u = DB.getUsers().find(u=>u.id===id);
+      document.getElementById('delName').textContent = `${u.prenom} ${u.nom}`;
+      deleteTarget = id;
+      document.getElementById('delModal').classList.remove('hidden');
+    }
+    function closeDelModal() { document.getElementById('delModal').classList.add('hidden'); deleteTarget=null; }
+    function confirmDelete() {
+      DB.deleteUser(deleteTarget);
+      showToast('Utilisateur supprimé', 'error');
+      closeDelModal();
+      load();
+    }
+
+    // ── Auto-refresh (détecte les nouvelles inscriptions) ──
+    // Vérifie toutes les 3 secondes si la liste a changé (simule temps réel)
+    setInterval(() => {
+      const fresh = DB.getUsers();
+      if (fresh.length !== prevCount) load();
+    }, 3000);
+
+    // Initial load
+    load();
+  </script>
+</body>
+</html>

@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JoyceStore — Produits</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <style>
+    .prod-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .prod-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.2rem;
+      transition: transform 0.2s, border-color 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .prod-card:hover { transform: translateY(-2px); border-color: var(--teal); }
+    .prod-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: var(--teal);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .prod-card:hover::before { opacity: 1; }
+    .prod-emoji-big { font-size: 2.4rem; margin-bottom: 0.75rem; }
+    .prod-name  { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.3rem; }
+    .prod-cat   { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.6rem; }
+    .prod-price { font-size: 1.2rem; font-weight: 800; font-family:'Space Grotesk',sans-serif; color: var(--teal); }
+    .prod-meta  { display:flex; align-items:center; justify-content:space-between; margin-top:0.75rem; }
+    .stock-badge {
+      font-size: 0.78rem; font-weight: 600; padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+    }
+    .stock-ok      { background:var(--teal-dim); color:var(--teal); }
+    .stock-low     { background:var(--gold-dim); color:var(--gold); }
+    .stock-out     { background:var(--red-dim);  color:var(--red); }
+    .prod-actions  { display:flex; gap:5px; margin-top:0.8rem; }
+    .view-mode { display:flex; gap:4px; }
+    .vm-btn { background:none; border:1px solid var(--border); border-radius:6px; padding:0.35rem 0.6rem; color:var(--text-muted); cursor:pointer; transition:all 0.15s; }
+    .vm-btn.active { border-color:var(--teal); color:var(--teal); background:var(--teal-dim); }
+  </style>
+</head>
+<body class="app">
+
+  <div class="sidebar-overlay hidden" id="overlay" onclick="toggleSidebar();this.classList.add('hidden')" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99;"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo"><div class="mark">J</div><span>JoyceStore</span></div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Menu</div>
+      <a href="dashboard.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="users.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        Utilisateurs
+      </a>
+      <a href="products.html" class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+        Produits
+      </a>
+      <a href="sales.html" class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Ventes
+      </a>
+    </nav>
+    <div class="sidebar-user" id="sidebarUser"></div>
+  </aside>
+
+  <div class="page">
+    <header class="topbar">
+      <button class="burger" onclick="toggleSidebar();document.getElementById('overlay').classList.toggle('hidden')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-left">
+        <div class="topbar-title">Gestion des produits</div>
+        <div class="topbar-sub" id="prodCountLabel"></div>
+      </div>
+      <div class="topbar-right">
+        <div class="view-mode">
+          <button class="vm-btn active" id="btnGrid" onclick="setView('grid',this)" title="Grille">⊞</button>
+          <button class="vm-btn" id="btnList" onclick="setView('list',this)" title="Liste">≡</button>
+        </div>
+        <button class="btn btn-primary" onclick="openModal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Ajouter
+        </button>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- Stats -->
+      <div class="stats-grid" id="prodStats"></div>
+
+      <div class="card" style="margin-top:1.2rem">
+        <div class="card-header">
+          <div class="toolbar" style="flex:1">
+            <div class="search-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input class="search-input" type="text" id="searchInput" placeholder="Rechercher un produit…" oninput="applyFilters()" />
+            </div>
+            <div class="filter-tabs">
+              <button class="ftab active" onclick="setCat('all',this)">Tous</button>
+              <button class="ftab" onclick="setCat('Alimentaire',this)">Alimentaire</button>
+              <button class="ftab" onclick="setCat('Hygiène',this)">Hygiène</button>
+              <button class="ftab" onclick="setCat('Construction',this)">Construction</button>
+              <button class="ftab" onclick="setCat('Divers',this)">Divers</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="prodsContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="overlay hidden" id="prodModal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="modalTitle">Ajouter un produit</h3>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="mId" />
+        <div class="form-group">
+          <label>Nom du produit *</label>
+          <input type="text" id="mNom" placeholder="Ex: Riz parfumé 25kg" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Catégorie *</label>
+            <select id="mCat">
+              <option>Alimentaire</option>
+              <option>Hygiène</option>
+              <option>Construction</option>
+              <option>Divers</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Emoji 🎨</label>
+            <input type="text" id="mEmoji" placeholder="📦" maxlength="4" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Prix (FCFA) *</label>
+            <input type="number" id="mPrix" placeholder="0" min="0" />
+          </div>
+          <div class="form-group">
+            <label>Stock initial *</label>
+            <input type="number" id="mStock" placeholder="0" min="0" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Fournisseur</label>
+          <input type="text" id="mFournisseur" placeholder="Nom du fournisseur" />
+        </div>
+        <div id="modalErr" class="msg-error hidden"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+        <button class="btn btn-primary" onclick="saveProduct()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete modal -->
+  <div class="overlay hidden" id="delModal">
+    <div class="modal" style="max-width:380px">
+      <div class="modal-head">
+        <h3>Supprimer le produit</h3>
+        <button class="modal-close" onclick="closeDelModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="color:var(--text-muted)">Voulez-vous vraiment supprimer <strong id="delName" style="color:var(--text)"></strong> ?</p>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" onclick="closeDelModal()">Annuler</button>
+        <button class="btn btn-danger" onclick="confirmDelete()">Supprimer</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <script src="assets/js/data.js"></script>
+  <script>
+    DB.requireAuth();
+    renderSidebarUser();
+
+    let allProds = [], filtered = [], currentCat = 'all', viewMode = 'grid', deleteTarget = null;
+
+    function load() {
+      allProds = DB.getProducts();
+      document.getElementById('prodCountLabel').textContent = `${allProds.length} produits enregistrés`;
+      renderStats();
+      applyFilters();
+    }
+
+    function renderStats() {
+      const total = allProds.length;
+      const stockVal = allProds.reduce((a,b) => a+(b.prix*b.stock), 0);
+      const lowStock = allProds.filter(p=>p.stock>0&&p.stock<20).length;
+      const outStock  = allProds.filter(p=>p.stock===0).length;
+      document.getElementById('prodStats').innerHTML = `
+        <div class="stat-card" style="--c:var(--teal)">
+          <div class="stat-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div>
+          <div><div class="stat-label">Total produits</div><div class="stat-value">${total}</div><div class="stat-diff">catalogue actuel</div></div>
+        </div>
+        <div class="stat-card" style="--c:var(--gold)">
+          <div class="stat-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+          <div><div class="stat-label">Valeur du stock</div><div class="stat-value" style="font-size:1.2rem">${fmtMoney(stockVal)}</div><div class="stat-diff">estimation totale</div></div>
+        </div>
+        <div class="stat-card" style="--c:var(--gold)">
+          <div class="stat-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+          <div><div class="stat-label">Stock faible</div><div class="stat-value">${lowStock}</div><div class="stat-diff">< 20 unités</div></div>
+        </div>
+        <div class="stat-card" style="--c:var(--red)">
+          <div class="stat-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>
+          <div><div class="stat-label">Rupture de stock</div><div class="stat-value">${outStock}</div><div class="stat-diff">en rupture</div></div>
+        </div>
+      `;
+    }
+
+    function setCat(c, btn) {
+      currentCat = c;
+      $$('.ftab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const q = ($('#searchInput')?.value||'').toLowerCase();
+      filtered = allProds.filter(p => {
+        const matchSearch = !q || p.nom.toLowerCase().includes(q) || p.categorie.toLowerCase().includes(q) || (p.fournisseur||'').toLowerCase().includes(q);
+        const matchCat = currentCat==='all' || p.categorie===currentCat;
+        return matchSearch && matchCat;
+      });
+      renderProds();
+    }
+
+    function setView(v, btn) {
+      viewMode = v;
+      $$('.vm-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      renderProds();
+    }
+
+    function stockClass(s) { return s===0?'stock-out':s<20?'stock-low':'stock-ok'; }
+    function stockText(s)  { return s===0?'Rupture':s<20?`Stock faible (${s})`:`${s} en stock`; }
+
+    function renderProds() {
+      const c = document.getElementById('prodsContainer');
+      if (!filtered.length) {
+        c.innerHTML = `<div style="text-align:center;padding:3rem;color:var(--text-muted)">Aucun produit trouvé</div>`;
+        return;
+      }
+      if (viewMode === 'grid') {
+        c.innerHTML = `<div class="prod-grid">${filtered.map(p => `
+          <div class="prod-card">
+            <div class="prod-emoji-big">${p.image||'📦'}</div>
+            <div class="prod-name">${p.nom}</div>
+            <div class="prod-cat">${p.categorie} · ${p.fournisseur||'—'}</div>
+            <div class="prod-price">${fmtMoney(p.prix)}</div>
+            <div class="prod-meta">
+              <span class="stock-badge ${stockClass(p.stock)}">${stockText(p.stock)}</span>
+              <span style="font-size:0.78rem;color:var(--text-dim)">${fmtDate(p.created)}</span>
+            </div>
+            <div class="prod-actions">
+              <button class="btn btn-ghost btn-icon" onclick="openEdit(${p.id})" title="Modifier">✏️</button>
+              <button class="btn btn-danger btn-icon" onclick="openDelete(${p.id})" title="Supprimer">🗑️</button>
+            </div>
+          </div>`).join('')}</div>`;
+      } else {
+        c.innerHTML = `<div class="table-scroll"><table>
+          <thead><tr><th>Produit</th><th>Catégorie</th><th>Prix</th><th>Stock</th><th>Fournisseur</th><th>Ajouté le</th><th>Actions</th></tr></thead>
+          <tbody>${filtered.map(p => `<tr>
+            <td><div class="cell-user"><span style="font-size:1.4rem">${p.image||'📦'}</span><span style="font-weight:600">${p.nom}</span></div></td>
+            <td>${roleBadge_cat(p.categorie)}</td>
+            <td style="color:var(--teal);font-weight:700">${fmtMoney(p.prix)}</td>
+            <td><span class="stock-badge ${stockClass(p.stock)}">${stockText(p.stock)}</span></td>
+            <td style="color:var(--text-muted)">${p.fournisseur||'—'}</td>
+            <td style="color:var(--text-muted);font-size:0.82rem">${fmtDate(p.created)}</td>
+            <td><div style="display:flex;gap:5px">
+              <button class="btn btn-ghost btn-icon" onclick="openEdit(${p.id})">✏️</button>
+              <button class="btn btn-danger btn-icon" onclick="openDelete(${p.id})">🗑️</button>
+            </div></td>
+          </tr>`).join('')}</tbody>
+        </table></div>`;
+      }
+    }
+
+    function roleBadge_cat(c) {
+      const map = {Alimentaire:'badge-teal',Hygiène:'badge-blue',Construction:'badge-gold',Divers:'badge-muted'};
+      return `<span class="badge ${map[c]||'badge-muted'}">${c}</span>`;
+    }
+
+    function openModal() {
+      document.getElementById('modalTitle').textContent = 'Ajouter un produit';
+      ['mId','mNom','mPrix','mStock','mFournisseur'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('mEmoji').value = '📦';
+      document.getElementById('mCat').value = 'Alimentaire';
+      document.getElementById('modalErr').classList.add('hidden');
+      document.getElementById('prodModal').classList.remove('hidden');
+    }
+
+    function openEdit(id) {
+      const p = DB.getProducts().find(p=>p.id===id);
+      if (!p) return;
+      document.getElementById('modalTitle').textContent = 'Modifier le produit';
+      document.getElementById('mId').value = p.id;
+      document.getElementById('mNom').value = p.nom;
+      document.getElementById('mCat').value = p.categorie;
+      document.getElementById('mEmoji').value = p.image||'📦';
+      document.getElementById('mPrix').value = p.prix;
+      document.getElementById('mStock').value = p.stock;
+      document.getElementById('mFournisseur').value = p.fournisseur||'';
+      document.getElementById('modalErr').classList.add('hidden');
+      document.getElementById('prodModal').classList.remove('hidden');
+    }
+
+    function closeModal() { document.getElementById('prodModal').classList.add('hidden'); }
+
+    function saveProduct() {
+      const id   = document.getElementById('mId').value;
+      const nom  = document.getElementById('mNom').value.trim();
+      const cat  = document.getElementById('mCat').value;
+      const emoji= document.getElementById('mEmoji').value.trim() || '📦';
+      const prix = Number(document.getElementById('mPrix').value);
+      const stock= Number(document.getElementById('mStock').value);
+      const four = document.getElementById('mFournisseur').value.trim();
+      const err  = document.getElementById('modalErr');
+
+      if (!nom || !prix) { err.textContent='❌ Nom et prix sont obligatoires.'; err.classList.remove('hidden'); return; }
+
+      if (id) { DB.updateProduct(Number(id), { nom, categorie:cat, image:emoji, prix, stock, fournisseur:four }); showToast('Produit modifié','success'); }
+      else    { DB.addProduct({ nom, categorie:cat, image:emoji, prix, stock, fournisseur:four }); showToast('Produit ajouté','success'); }
+      closeModal(); load();
+    }
+
+    function openDelete(id) {
+      const p = DB.getProducts().find(p=>p.id===id);
+      document.getElementById('delName').textContent = p.nom;
+      deleteTarget = id;
+      document.getElementById('delModal').classList.remove('hidden');
+    }
+    function closeDelModal() { document.getElementById('delModal').classList.add('hidden'); deleteTarget=null; }
+    function confirmDelete() { DB.deleteProduct(deleteTarget); showToast('Produit supprimé','error'); closeDelModal(); load(); }
+
+    load();
+  </script>
+</body>
+</html>
